@@ -68,7 +68,7 @@ def news_list():
     news = News.objects.bulk_create(
         News(
             title=f'Новость {index}',
-            text='Текст',
+            text='Текст для теста',
             date=today - timedelta(days=index)
         )
         for index in range(settings.NEWS_COUNT_ON_HOME_PAGE + 1)
@@ -102,3 +102,17 @@ def bad_form_comment():
     return {
         'text': f'Комментарий содержит: {BAD_WORDS[0]} - плохое слово'
     }
+
+
+@pytest.fixture
+def delete_comments():
+    Comment.objects.all().delete()
+
+
+@pytest.fixture(autouse=True)
+def enable_db_access_for_all_tests(db):
+    pass
+
+
+def pytest_make_parametrize_id(val):
+    return repr(val)

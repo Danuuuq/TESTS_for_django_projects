@@ -3,8 +3,6 @@ import pytest
 from django.conf import settings
 from django.urls import reverse
 
-pytestmark = pytest.mark.django_db()
-
 
 def test_news_count_and_order(client, news_list):
     """Проверка кол-ва новостей на главной странице и их сортировка.

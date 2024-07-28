@@ -1,27 +1,24 @@
 from http import HTTPStatus
 
-from django.contrib.auth import get_user_model
-from django.test import TestCase
 from django.urls import reverse
 
-from notes.models import Note
-
-User = get_user_model()
+from .common_data import BaseTestCase
 
 
-class TestRoutes(TestCase):
+class TestRoutes(BaseTestCase):
     """Класс проверки отображения соответсвующих страницы."""
 
-    @classmethod
-    def setUpTestData(cls):
-        """Создание объектов для тестирования."""
-        cls.author_1 = User.objects.create(username='Тестовый полюзователь 1')
-        cls.author_2 = User.objects.create(username='Тестовый пользователь 2')
-        cls.note = Note.objects.create(
-            title='Название',
-            text='Текст заметки',
-            author=cls.author_1
-        )
+    URLS_FOR_NOT_AUTH = (
+        'notes:home',
+        'users:login',
+        'users:logout',
+        'users:signup',
+    )
+    URLS_FOR_AUTH = (
+        'notes:add',
+        'notes:list',
+        'notes:success',
+    )
 
     def test_pages_availability(self):
         """Проверка доступности страниц у неавторизованного пользователя.
@@ -29,13 +26,7 @@ class TestRoutes(TestCase):
         Неавторизованному пользователю доступны следующие страницы:
         главная, авторизации, регистрации и выхода из учетной записи.
         """
-        urls = (
-            'notes:home',
-            'users:login',
-            'users:logout',
-            'users:signup',
-        )
-        for name in urls:
+        for name in self.URLS_FOR_NOT_AUTH:
             with self.subTest(name=name):
                 url = reverse(name)
                 response = self.client.get(url)
@@ -53,22 +44,21 @@ class TestRoutes(TestCase):
         """
         user_statuses = (
             (
-                self.author_1,
+                self.author_client,
                 HTTPStatus.OK,
                 'Автору недоступны страницы удаления и редактирования заметки.'
             ),
             (
-                self.author_2,
+                self.not_author_client,
                 HTTPStatus.NOT_FOUND,
                 'Cтраница удаления и редактирования доступна другим юзерам.'
             )
         )
         for user, status, msg in user_statuses:
-            self.client.force_login(user)
             for name in ('notes:detail', 'notes:edit', 'notes:delete'):
                 with self.subTest(user=user, status=status):
                     url = reverse(name, kwargs={'slug': self.note.slug})
-                    response = self.client.get(url)
+                    response = user.get(url)
                     self.assertEqual(response.status_code, status, msg=msg)
 
     def test_redirect_for_anonymous_client(self):
@@ -105,19 +95,9 @@ class TestRoutes(TestCase):
         Страницы всех заметок и их создания, авторизации, регистрации
         и выхода из учетной записи доступны всем.
         """
-        urls = (
-            'notes:add',
-            'notes:list',
-            'notes:success',
-            'users:login',
-            'users:logout',
-            'users:signup',
-        )
-        user = self.author_1
-        self.client.force_login(user)
-        for name in urls:
+        for name in self.URLS_FOR_AUTH + self.URLS_FOR_NOT_AUTH:
             url = reverse(name)
-            response = self.client.get(url)
+            response = self.author_client.get(url)
             self.assertEqual(
                 response.status_code,
                 HTTPStatus.OK,

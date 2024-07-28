@@ -1,12 +1,8 @@
-import pytest
-
 from http import HTTPStatus
-
-from django.urls import reverse
-
+import pytest
 from pytest_django.asserts import assertRedirects
 
-pytestmark = pytest.mark.django_db()
+from django.urls import reverse
 
 
 @pytest.mark.parametrize(
